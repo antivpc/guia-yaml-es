@@ -273,4 +273,551 @@ El uso adecuado de los booleanos facilita la configuración lógica de tus aplic
 
 ---
 
+## 4. Nulos
+
+En YAML, un valor **nulo** (o `null`) se utiliza para representar la ausencia intencional de datos o un valor indefinido. Es análogo a `null` en JavaScript, `None` en Python, o `nil` en Ruby. Indicar que un valor es nulo es diferente a simplemente dejar una clave vacía, ya que un valor nulo comunica explícitamente que no hay datos para esa entrada.
+
+### Representación de Valores Nulos
+
+YAML ofrece dos formas principales para representar un valor nulo, y ambas son igualmente válidas:
+
+1.  **`null`:** La palabra `null` (insensible a mayúsculas y minúsculas: `null`, `Null`, `NULL`) es la forma más común y explícita de indicar un valor nulo.
+
+2.  **`~` (tilde):** El carácter `~` también se reconoce como una representación de un valor nulo. Es una opción más concisa.
+
+**Ejemplos de uso:**
+
+```yaml
+# Ejemplos usando 'null'
+descripcion_opcional: null
+valor_por_defecto: NULL
+configuracion_no_establecida: Null
+
+# Ejemplos usando '~'
+sin_contenido: ~
+datos_vacios: ~
+
+# Un campo opcional en una lista de objetos
+producto:
+  id: P101
+  nombre: Laptop Ultraligera
+  descripcion: null # Este producto no tiene una descripción detallada
+
+usuario:
+  id: 205
+  username: jdoe
+  email: jdoe@example.com
+  telefono: ~ # No se proporcionó un número de teléfono
+```
+
+**Consideraciones importantes:**
+
+* **Ausencia de valor vs. Cadena vacía:** Es importante distinguir entre un valor nulo y una cadena de texto vacía.
+    * `clave: null` o `clave: ~` indica que el valor es nulo.
+    * `clave: ""` o `clave: ''` indica que el valor es una cadena de texto vacía (un valor existente, solo que sin caracteres).
+    * Dejar una clave sin valor (ej. `clave:`) es a menudo interpretado como un valor nulo por los analizadores YAML, pero es una buena práctica usar `null` o `~` para mayor claridad.
+
+    ```yaml
+    # Esto es un valor nulo
+    campo_nulo: null
+
+    # Esto es una cadena vacía
+    campo_vacio_string: ""
+
+    # Esto generalmente se interpreta como nulo (pero menos explícito)
+    campo_implicito_nulo:
+    ```
+
+* **Sin comillas:** Al igual que con los booleanos y los números, para que `null` o `~` sean interpretados como un valor nulo, **no deben estar entre comillas**. Si los pones entre comillas (ej. `"null"`), serán tratados como una cadena de texto literal.
+
+Los valores nulos son particularmente útiles en configuraciones donde ciertos parámetros son opcionales y su ausencia necesita ser explícitamente declarada, o cuando un valor no se ha determinado aún.
+
+---
+
+## 5. Fechas y Horas
+
+YAML es capaz de reconocer y parsear automáticamente diferentes formatos de fechas y horas, convirtiéndolos en el tipo de dato de fecha/hora nativo del lenguaje de programación que esté procesando el YAML (por ejemplo, objetos `datetime` en Python, `Date` en JavaScript). Esto elimina la necesidad de que los desarrolladores realicen el parseo de cadenas manualmente, siempre y cuando se sigan los formatos estándar.
+
+### Formatos Estándar de Fecha y Hora
+
+YAML se adhiere a los estándares ISO 8601 para la representación de fechas y horas, lo que garantiza la interoperabilidad y la consistencia.
+
+Aquí están los formatos más comunes que YAML puede reconocer implícitamente:
+
+* **Fecha (Date):** `AAAA-MM-DD` (año-mes-día)
+    ```yaml
+    fecha_nacimiento: 1990-07-20
+    fecha_evento: 2025-12-25
+    ```
+
+* **Hora (Time):** `HH:MM:SS` o `HH:MM:SS.fracción` (horas:minutos:segundos con o sin fracción de segundos)
+    ```yaml
+    hora_apertura: 09:00:00
+    hora_cierre: 17:30:15.500
+    ```
+
+* **Fecha y Hora (Timestamp):** `AAAA-MM-DD HH:MM:SS` o `AAAA-MM-DD HH:MM:SS.fracción`
+    ```yaml
+    inicio_sesion: 2024-06-19 10:30:00
+    ultima_actualizacion: 2024-06-19 10:51:58.123
+    ```
+
+* **Fecha y Hora con Zona Horaria (Timestamp with Timezone):** `AAAA-MM-DD HH:MM:SS ZZZ` (donde `ZZZ` es el offset de la zona horaria)
+    ```yaml
+    hora_servidor_utc: 2024-06-19 14:00:00Z # Hora UTC (Z para Zulu/UTC)
+    hora_local_lapaz: 2024-06-19 10:51:58-04:00 # Con offset de -4 horas de UTC
+    hora_local_berlin: 2024-06-19 16:51:58+02:00 # Con offset de +2 horas de UTC
+    ```
+
+    **Nota sobre la Zona Horaria:** El offset de la zona horaria se especifica como `+/-HH:MM` o simplemente `Z` para UTC. Algunos procesadores de YAML también pueden entender nombres de zonas horarias (ej. `America/La_Paz`), pero esto es menos común como una inferencia automática y podría requerir que el analizador tenga soporte específico. El formato ISO 8601 con offset numérico es el más seguro.
+
+**Ejemplos Combinados:**
+
+```yaml
+eventos:
+  - nombre: Conferencia Tech
+    fecha_inicio: 2024-09-15
+    hora_registro: 08:30:00
+    # Fecha y hora exacta con zona horaria (útil para eventos globales)
+    apertura_puertas: 2024-09-15 08:00:00-05:00
+
+  - nombre: Lanzamiento Producto
+    # Solo fecha y hora sin segundos o zona horaria
+    fecha_hora_lanzamiento: 2025-01-20 14:00
+
+  - nombre: Revisión Semanal
+    # Solo fecha
+    proxima_revision: 2024-06-26
+```
+
+**Consideraciones importantes:**
+
+* **Sin comillas:** Al igual que con los números y booleanos, para que YAML infiera el tipo de dato de fecha/hora, el valor **no debe estar entre comillas**. Si pones ` "2024-06-19" `, será tratado como una cadena de texto.
+* **Precisión:** La precisión de la fracción de segundos puede variar entre implementaciones de YAML y los lenguajes de programación. Si la precisión es crítica, asegúrate de que tu procesador YAML y el tipo de dato de destino la soporten.
+* **Ambiguidad:** Aunque YAML es inteligente, si una cadena es ambiguamente una fecha/hora y otra cosa (ej. `2024-06-19` podría ser una cadena representando una versión de software), el contexto o la especificación explícita de un tipo pueden ser necesarios en casos muy raros, pero para los formatos ISO 8601, la inferencia suele ser robusta.
+
+Utilizar los formatos estándar de fecha y hora en YAML asegura que tus datos temporales sean interpretados correctamente por diferentes sistemas y aplicaciones, facilitando la gestión de eventos, logs y programaciones.
+
+---
+
+¡Genial! Pasemos a la última sección del Capítulo 3, la **3.6 Binario**. Esta es una sección opcional porque el manejo directo de datos binarios en YAML no es tan común como los otros tipos, pero es importante saber que la capacidad existe.
+
+---
+
+## 6. Binario (opcional, para casos específicos)
+
+YAML, en su especificación completa, tiene la capacidad de incluir datos binarios directamente dentro de un documento. Sin embargo, este es un caso de uso mucho menos común que las cadenas de texto, números, booleanos o fechas. Generalmente, cuando se necesitan incluir datos binarios (como imágenes, archivos de audio o documentos compilados), es más habitual almacenarlos externamente y referenciarlos mediante una ruta o URL en el archivo YAML.
+
+No obstante, si la necesidad surge, YAML permite codificar datos binarios utilizando la codificación **Base64**. Base64 es un método para codificar datos binarios en un formato de texto ASCII, lo que permite su inclusión en documentos basados en texto como YAML.
+
+* **¿Por qué Base64?** Los datos binarios raw (crudos) no son caracteres de texto estándar y podrían corromper o ser malinterpretados por un analizador de texto. Base64 asegura que los datos binarios se representen de forma segura dentro de un archivo de texto.
+
+* **Sintaxis:** Para indicar que un valor es un dato binario codificado en Base64, se utiliza una **etiqueta explícita de tipo** `!!binary`. La etiqueta se coloca antes del valor y le indica al analizador YAML cómo interpretar el contenido.
+
+```yaml
+clave: !!binary <datos_codificados_en_base64>
+```
+
+**Ejemplo de uso:**
+
+Imagina que tienes una pequeña imagen de un icono que quieres incrustar directamente en tu archivo de configuración YAML, o quizás un certificado.
+
+```yaml
+configuracion_app:
+  nombre: MiAppSegura
+  icono_pequeno: !!binary |
+    iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/
+    xhBQAAACBjSFJNAAB6JQAAgIQAAPoAAACA6AAAdTAAAOpgAAC6BLpG/wAAADN
+    QTFRFAAAAAP//////////////////////////////////////////////////
+    ////////////AAAAAEe27wAAAAF0Uk5TAAEAAAAo4L+yAAAAAWJLR0QCgA
+    j0/QAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4ggGEC073r77AAAAA
+    BJRU5ErkJggg==
+  firma_digital: !!binary |
+    LS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLQpNSUlEWURDQWdRQmFEZ0xNQTBHQT
+    FVRUF3d0xVbXhzWkdWc2JpQlVhMjVsY3k1amIyMHRYM0poYlhCdQpnQTFVRUF3
+    d0xVbXhzWkdWc2JpQlVhMjVsY3k1amIyMHRYM0poYlhCdQpYekFOQmdOVkJBZ1
+    RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01UTTVlVEFOCkJnTnZC
+    QWNUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhOMGJ5NXBibXhvZVEwMU1EQX
+    dOREF3TnpZMApNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFBMGhkQ0JNU0NVR0FU
+    QkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQUx0dC91N0h3a0VjQW
+    dkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6QlFCZ0dkcmRzQUlG
+    SlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6NlJ0eTYKY2dGNm96Qk
+    VBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15cWw5dGt1ZmdqZ3hE
+    bEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcDRaN3J2clh4V0RkZU
+    NnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFFdkFWU291VzVjU0JD
+    QXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0FnRUFDMndnQnJoRF
+    R3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhBd0Rna0UKQUFBQ0FB
+    QUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pNQkFBR0dDZ0FFckFRQUFBUUFDWmdFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTFlVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2wKUG8wdkxjaUtHQUFNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nk
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTFZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2wKUG8wdkxjaUtHQUFN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6Zwpn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2wKUG8wdkxjaUtHQUFNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTNaVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTReVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2wKUG8wdkxjaUtHQUFNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY2UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTReVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6Zwpn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pUekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2wKUG8wdkxjaUtHQUFNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYMlpoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM2hoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM2hoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM2hoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM2hoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM2hoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3JoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    pVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TVRFd01U
+    TTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhOMGJ5NX
+    BibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0FnRUFB
+    MGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FNQWdFQU
+    x0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9QdmV3Clh6
+    QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5eWJ6Nl
+    J0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTUlESm15
+    cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2a2tWcD
+    RaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0J3UVFF
+    dkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApnQVFBQ0
+    FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2NrcmhB
+    d0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFBQUFBQU
+    FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB
+    QUFBQQpVekFKQmdOVkJBZ1RBMkZuWVdOMFFYSmhiakNCYmpBZk5qQTVNelV3TV
+    RFd01UTTJZVEFOCkJnTlZCQUdUQjJadVltOXNaQ0JzWVhOelpYTnpYM3RoYlhO
+    MGJ5NXBibXhvZVEwMU1EQXdOREF3Ck56WTBNekEyTnpNMU1UVTJZamcwTVRCQ0
+    FnRUFBMGRoQ0JNU0NVR0FUQkVsQUlBSHh4U2xHNGh6b2xQbzB2TGNpSwpnZ0FN
+    QWdFQUx0dC91N0h3a0VjQWdkWkhBQmdTQUFBQ0FnRUEwbk5wcm96R21iUm9Qdm
+    V3Clh6QlFCZ0dkcmRzQUlGSlVvMkVndEdzT0RBbFl1a0VBaWJkVEFhMThLd2g5
+    eWJ6NlJ0eTYKY2dGNm96QkVBdjdWZXl0RUtxTkNnUVdKUVFCZ0drcXpoQUlBTU
+    lESm15cWw5dGt1ZmdqZ3hEbEY1CmRjY3UrbkRnZ0FNQWdFQUxkbmFwV3dYUGJ2
+    a2tWcDRaN3J2clh4V0RkZUNnZ2t3NlJpQWdZQUxvZEEKUVlCQUFBQ0FnUjRkQ0
+    J3UVFFdkFWU291VzVjU0JDQXdKUUFHV0NBZ0hBQWJFdW13bUpIWEZkYmZ6ZApn
+    QVFBQ0FnRUFDMndnQnJoRFd3a0VBZ0VBQWdFQU13d0NCZ3dkemQ0Z0NBUUZCZ2
+    NrcmhBd0Rna0UKQUFBQ0FBQUFGUUZCZ2NrcmhBd0Rna0VBQUFBQUFBQUFBQUFB
+    QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ
+    otLS0tRU5EIENFUlRJRklDQVRFLS0tLQo=
+```
+
+**Cómo funcionan las etiquetas explícitas (`!!`):**
+
+La sintaxis `!!` es una "etiqueta de tipo" (tag) en YAML. Permite especificar explícitamente el tipo de dato de un valor, lo que es útil en los siguientes casos:
+
+1.  **Datos binarios:** Como acabamos de ver con `!!binary`.
+2.  **Forzar un tipo:** Si YAML infiere un tipo que no es el que deseas. Por ejemplo, si tienes una cadena que parece un booleano o un número, puedes forzarla a ser una cadena:
+    ```yaml
+    cadena_true: !!str true # Forzar que 'true' sea una cadena, no un booleano
+    id_numero_como_string: !!str 12345 # Forzar que '12345' sea una cadena
+    ```
+    (aunque para estas últimas, las comillas simples o dobles suelen ser suficientes y más legibles).
+
+**Consideraciones y Desventajas:**
+
+* **Legibilidad:** Los datos codificados en Base64 son ilegibles para los humanos, lo que va en contra del principio de "legibilidad humana" de YAML.
+* **Tamaño del archivo:** La codificación Base64 aumenta el tamaño de los datos en aproximadamente un 33%. Para archivos binarios grandes, esto puede hacer que tu archivo YAML sea muy voluminoso y lento de cargar.
+* **Manejo:** Requiere que el programa que lee el YAML decodifique los datos Base64 para convertirlos de nuevo a su formato binario original.
+* **Alternativas:** Para la mayoría de los casos, es preferible:
+    * **Referenciar el archivo:** Almacenar el archivo binario por separado y guardar su ruta o URL en el YAML.
+        ```yaml
+        logo_path: /imagenes/logo.png
+        certificado_url: https://ejemplo.com/cert.pem
+        ```
+    * **Usar un sistema de gestión de activos:** Para grandes cantidades de datos binarios, es más eficiente usar sistemas de almacenamiento de objetos (como S3) o sistemas de archivos dedicados.
+
+En resumen, la capacidad de YAML para manejar datos binarios es una característica poderosa, aunque de nicho. Es más probable que la encuentres en escenarios muy específicos, como la inclusión de pequeños iconos, hashes, o firmas digitales donde la autocontención del documento es crucial y el impacto en la legibilidad y el tamaño es mínimo.
+
+---
+
 [:point_up_2: Volver al Índice](README.md) | [:point_left: Capítulo 2](capitulo-2.md) | [:point_right: Capítulo 4](capitulo-4.md)
